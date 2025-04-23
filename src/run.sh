@@ -2,8 +2,8 @@
 
 # === CONFIG ===
 CONDA_ENV="elm"
-INPUT_PATH="./input_data"
-OUTPUT_PATH="./output_data"
+INPUT_PATH="../dataset"
+OUTPUT_PATH="../output"
 # ==============
 
 # Help message

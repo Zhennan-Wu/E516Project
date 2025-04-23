@@ -1,0 +1,21 @@
+Environment Setup
+
+1. MPICH # JetStream Only
+
+2. PnetCDF(C)
+# version: 1.14.0
+# https://github.com/Parallel-NetCDF/PnetCDF/blob/master/INSTALL
+
+3. Anaconda # JetStream Only
+$ conda create -n elm python=3.9
+$ conda activate elm
+ 
+
+4. mpi4py
+$ python -m pip install mpi4py
+
+5. pnetcdf-python
+# Quick Installation
+# https://github.com/Parallel-NetCDF/PnetCDF-Python
+
+

@@ -31,12 +31,13 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 
 # === Build mpiexec command ===
 if [ "$MULTI_NODE" -eq 1 ]; then
-    # Multi-node mode: activate the conda environment for each process
-    MPI_CMD="mpiexec --hostfile $HOSTFILE_PATH -n $TOTAL_PROCS env \"PATH=/home/exouser/miniforge3/envs/$CONDA_ENV/bin:$PATH\" bash -c \"source $(conda info --base)/etc/profile.d/conda.sh && conda activate $CONDA_ENV && python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N\""
+    # Multi-node mode: Activate conda environment for each process
+    MPI_CMD="mpiexec --hostfile $HOSTFILE_PATH -n $TOTAL_PROCS env \"PATH=/home/exouser/miniforge3/envs/$CONDA_ENV/bin:$PATH\" conda run -n $CONDA_ENV python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 else
-    # Single-node mode: activate conda environment for all processes
-    MPI_CMD="mpiexec -n $TOTAL_PROCS bash -c \"source $(conda info --base)/etc/profile.d/conda.sh && conda activate $CONDA_ENV && python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N\""
+    # Single-node mode: Activate conda environment for all processes
+    MPI_CMD="mpiexec -n $TOTAL_PROCS conda run -n $CONDA_ENV python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 fi
+
 
 # === Run ===
 echo "Running '$SCRIPT' using $TOTAL_PROCS MPI processes in conda env '$CONDA_ENV'"

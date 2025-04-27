@@ -3,6 +3,7 @@ import pnetcdf as pnc
 import numpy as np
 import os
 
+MPI.Init()
 # Get the global MPI communicator
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -39,10 +40,11 @@ count = [10]
 req = var_x.iput_var(start=start, count=count, data=local_data)
 
 # Wait for all non-blocking write operations to complete
-ncfile.wait_all([req])
+req.wait()
 
 # Close the file
 ncfile.close()
 
 if rank == 0:
     print("✅ Successfully created test_parallel_pnetcdf.nc with", size, "processes.")
+MPI.Finalize()

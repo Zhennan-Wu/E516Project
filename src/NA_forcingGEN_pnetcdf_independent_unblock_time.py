@@ -347,9 +347,6 @@ def main():
     if not HAS_PNETCDF:
         print("pnetcdf-python is required for this script")
         sys.exit(1)
-        
-    if not MPI.Is_initialized():
-        print("MPI is not initialized. Please run with mpiexec or mpirun.")
 
     world_comm = MPI.COMM_WORLD
     world_size = world_comm.Get_size()

@@ -48,7 +48,7 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
         comm: MPI communicator for this file's M processes
         M: Number of processes for this file
     """
-    local_rank = comm.Get_rank()  # Rank within the sub-communicator for this file
+    # local_rank = comm.Get_rank()  # Rank within the sub-communicator for this file
     
     # Open the source file (all processes)
     source_file = os.path.join(input_path, file)
@@ -56,8 +56,8 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
     # Open with PNetCDF
     src = pnc.File(filename=source_file, mode='r', comm=comm)
 
-    if local_rank == 0:
-        print(f"Successfully opened file: {source_file}\n")
+    # if local_rank == 0:
+    #     print(f"Successfully opened file: {source_file}\n")
     total_rows = len(src.dimensions['x'])
     total_cols = len(src.dimensions['y'])
     total_time = len(src.dimensions['time'])
@@ -73,13 +73,15 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
     time_remainder = time_steps % M
     
     # Calculate the start and end indices for the current process
-    if local_rank < time_remainder:
-        local_start_time = local_rank * (base_time_per_process + 1)
-        local_count_time = base_time_per_process + 1
-    else:
-        local_start_time = local_rank * base_time_per_process + time_remainder
-        local_count_time = base_time_per_process
-    
+    # if local_rank < time_remainder:
+    #     local_start_time = local_rank * (base_time_per_process + 1)
+    #     local_count_time = base_time_per_process + 1
+
+    # else:
+    #     local_start_time = local_rank * base_time_per_process + time_remainder
+    #     local_count_time = base_time_per_process
+    local_start_time = 0
+    local_count_time = 1
     local_end_time = local_start_time + local_count_time
     
     # print(f"Total time steps: {time_steps}, Rank: {local_rank}, Processing steps: {local_start_time} to {local_end_time-1}\n")
@@ -260,13 +262,15 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
     landcells_remainder = number_landcells % M
     
     # Calculate the start and end indices for the current process
-    if local_rank < landcells_remainder:
-        local_start_landcells = local_rank * (base_lancells_per_process + 1)
-        local_count_landcells = base_lancells_per_process + 1
-    else:
-        local_start_landcells = local_rank * base_lancells_per_process + landcells_remainder
-        local_count_landcells = base_lancells_per_process
+    # if local_rank < landcells_remainder:
+    #     local_start_landcells = local_rank * (base_lancells_per_process + 1)
+    #     local_count_landcells = base_lancells_per_process + 1
+    # else:
+    #     local_start_landcells = local_rank * base_lancells_per_process + landcells_remainder
+    #     local_count_landcells = base_lancells_per_process
     
+    local_start_landcells = 0
+    local_count_landcells = 1
     local_end_landcells = local_start_landcells + local_count_landcells
 
     # Write lat/lon data
@@ -283,8 +287,8 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
     src.close()
     dst.close()
     
-    if local_rank == 0:
-        print(f"Successfully processed {file}\n")
+    # if local_rank == 0:
+    #     print(f"Successfully processed {file}\n")
 
 def get_files(input_path, ncheader='clmforc'):
     """Get the list of NetCDF files to process."""
@@ -350,7 +354,7 @@ def main():
 
     # if world_rank == 0:
     #     print('Node_world_rank', get_node_rank(world_comm))
-    print(f'Group {file_group} Local_rank {group_rank}')
+    # print(f'Group {file_group} Local_rank {group_rank}')
 
     # Calculate file distribution among groups, handling uneven division
     base_files_per_group = n_files // N  # Integer division

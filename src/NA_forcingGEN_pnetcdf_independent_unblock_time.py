@@ -15,6 +15,7 @@ from pyproj import CRS
 try:
     from mpi4py import MPI
     HAS_MPI4PY = True
+    world_comm = MPI.COMM_WORLD
 except ImportError:
     HAS_MPI4PY = False
     print("mpi4py is required for this script")

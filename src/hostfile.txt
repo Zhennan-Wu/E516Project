@@ -1,5 +1,5 @@
 # Master node
-10.3.34.77 slots=1
+10.3.34.77 slots=64
 
 # Worker nodes
-10.3.34.228 slots=3
+10.3.34.228 slots=64

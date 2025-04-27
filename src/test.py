@@ -48,220 +48,218 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
         comm: MPI communicator for this file's M processes
         M: Number of processes for this file
     """
-    # local_rank = comm.Get_rank()  # Rank within the sub-communicator for this file
+    local_rank = comm.Get_rank()  # Rank within the sub-communicator for this file
     
     # Open the source file (all processes)
     source_file = os.path.join(input_path, file)
 
     # Open with PNetCDF
     src = pnc.File(filename=source_file, mode='r', comm=comm)
-
+ 
     # if local_rank == 0:
     #     print(f"Successfully opened file: {source_file}\n")
-    total_rows = len(src.dimensions['x'])
-    total_cols = len(src.dimensions['y'])
-    total_time = len(src.dimensions['time'])
+    # total_rows = len(src.dimensions['x'])
+    # total_cols = len(src.dimensions['y'])
+    # total_time = len(src.dimensions['time'])
 
-    # If time_steps is -1, use all time steps
-    if time_steps == -1:
-        time_steps = total_time
-    else:
-        time_steps = min(time_steps, total_time)
+    # # If time_steps is -1, use all time steps
+    # if time_steps == -1:
+    #     time_steps = total_time
+    # else:
+    #     time_steps = min(time_steps, total_time)
     
-    # Calculate time slice for each process
-    base_time_per_process = time_steps // M
-    time_remainder = time_steps % M
+    # # Calculate time slice for each process
+    # base_time_per_process = time_steps // M
+    # time_remainder = time_steps % M
     
-    # Calculate the start and end indices for the current process
+    # # Calculate the start and end indices for the current process
     # if local_rank < time_remainder:
     #     local_start_time = local_rank * (base_time_per_process + 1)
     #     local_count_time = base_time_per_process + 1
-
     # else:
     #     local_start_time = local_rank * base_time_per_process + time_remainder
     #     local_count_time = base_time_per_process
-    local_start_time = 0
-    local_count_time = 1
-    local_end_time = local_start_time + local_count_time
     
-    # print(f"Total time steps: {time_steps}, Rank: {local_rank}, Processing steps: {local_start_time} to {local_end_time-1}\n")
+    # local_end_time = local_start_time + local_count_time
     
-    # Read data using PNetCDF API (avoiding Python slicing)
-    # Create start and count arrays for data reading
-    start_time = [local_start_time, 0, 0]
-    count_time = [local_count_time, total_cols, total_rows]
+    # # print(f"Total time steps: {time_steps}, Rank: {local_rank}, Processing steps: {local_start_time} to {local_end_time-1}\n")
+    
+    # # Read data using PNetCDF API (avoiding Python slicing)
+    # # Create start and count arrays for data reading
+    # start_time = [local_start_time, 0, 0]
+    # count_time = [local_count_time, total_cols, total_rows]
 
 
-    # Read only my portion of the data using PNetCDF
-    local_data = np.zeros((local_count_time, total_cols, total_rows), dtype=np.float32)
-    req_var = src.variables[var_name].get_var_all(start=start_time, count=count_time, data=local_data)
+    # # Read only my portion of the data using PNetCDF
+    # local_data = np.zeros((local_count_time, total_cols, total_rows), dtype=np.float32)
+    # req_var = src.variables[var_name].get_var_all(start=start_time, count=count_time, data=local_data)
 
-    # start=start_time, count=count_time, 
-    # src.wait_all(requests=[req_var])
-    # print(f"Process {local_rank}: Successfully loaded data from time {local_start_time} to {local_end_time-1}\n")
+    # # start=start_time, count=count_time, 
+    # # src.wait_all(requests=[req_var])
+    # # print(f"Process {local_rank}: Successfully loaded data from time {local_start_time} to {local_end_time-1}\n")
     
-    # req_read_list = []
-    # Read x and y dimensions
+    # # req_read_list = []
+    # # Read x and y dimensions
+    # # x_dim = np.zeros(total_rows, dtype=np.float32)
+    # # req_read_list.append(src.variables['x'].iget_var(data=x_dim))
+    # # y_dim = np.zeros(total_cols, dtype=np.float32)
+    # # req_read_list.append(src.variables['y'].iget_var(data=y_dim))
     # x_dim = np.zeros(total_rows, dtype=np.float32)
-    # req_read_list.append(src.variables['x'].iget_var(data=x_dim))
+    # req_x = src.variables['x'].get_var_all(data=x_dim)
     # y_dim = np.zeros(total_cols, dtype=np.float32)
-    # req_read_list.append(src.variables['y'].iget_var(data=y_dim))
-    x_dim = np.zeros(total_rows, dtype=np.float32)
-    req_x = src.variables['x'].get_var_all(data=x_dim)
-    y_dim = np.zeros(total_cols, dtype=np.float32)
-    req_y = src.variables['y'].get_var_all(data=y_dim)
+    # req_y = src.variables['y'].get_var_all(data=y_dim)
 
-    # Time handling - each process reads its own time portion
-    local_data_time = np.zeros(local_count_time, dtype=np.float32)
-    req_time = src.variables['time'].get_var_all(start=[local_start_time], count=[local_count_time], data=local_data_time)
+    # # Time handling - each process reads its own time portion
+    # local_data_time = np.zeros(local_count_time, dtype=np.float32)
+    # req_time = src.variables['time'].get_var_all(start=[local_start_time], count=[local_count_time], data=local_data_time)
 
-    # Create a request list for all non-blocking operations
-    req_read_list = [req_var, req_x, req_y, req_time]
+    # # Create a request list for all non-blocking operations
+    # req_read_list = [req_var, req_x, req_y, req_time]
 
-    # Set up projection transformations
-    geoxy_proj_str = "+proj=lcc +lon_0=-100 +lat_0=42.5 +lat_1=25 +lat_2=60 +x_0=0 +y_0=0 +R=6378137 +f=298.257223563 +units=m +no_defs"
-    geoxyProj = CRS.from_proj4(geoxy_proj_str)
-    lonlatProj = CRS.from_epsg(4326)
-    Txy2lonlat = Transformer.from_proj(geoxyProj, lonlatProj, always_xy=True)
+    # # Set up projection transformations
+    # geoxy_proj_str = "+proj=lcc +lon_0=-100 +lat_0=42.5 +lat_1=25 +lat_2=60 +x_0=0 +y_0=0 +R=6378137 +f=298.257223563 +units=m +no_defs"
+    # geoxyProj = CRS.from_proj4(geoxy_proj_str)
+    # lonlatProj = CRS.from_epsg(4326)
+    # Txy2lonlat = Transformer.from_proj(geoxyProj, lonlatProj, always_xy=True)
 
-    # Wait for all read requests to complete
-    src.wait_all(requests=req_read_list)
-    x_dim = x_dim.astype(np.float64)
-    y_dim = y_dim.astype(np.float64)
+    # # Wait for all read requests to complete
+    # src.wait_all(requests=req_read_list)
+    # x_dim = x_dim.astype(np.float64)
+    # y_dim = y_dim.astype(np.float64)
 
-    grid_x, grid_y = np.meshgrid(x_dim, y_dim)
-    lonxy, latxy = Txy2lonlat.transform(grid_x, grid_y)  
+    # grid_x, grid_y = np.meshgrid(x_dim, y_dim)
+    # lonxy, latxy = Txy2lonlat.transform(grid_x, grid_y)  
 
 
-    local_data_time = local_data_time.astype(np.float64)
+    # local_data_time = local_data_time.astype(np.float64)
 
-    # Get time unit attribute
-    tunit = src.variables['time'].get_att('units')
+    # # Get time unit attribute
+    # tunit = src.variables['time'].get_att('units')
     
-    # Process the time units
-    t0 = str(tunit.lower()).strip('days since')
-    t0 = datetime.strptime(t0, '%Y-%m-%d %X')
+    # # Process the time units
+    # t0 = str(tunit.lower()).strip('days since')
+    # t0 = datetime.strptime(t0, '%Y-%m-%d %X')
     
-    # Calculate year, month, day for the time values
-    iyr = t0.year + np.floor(local_data_time/365.0)
-    data_time0 = datetime.strptime(str(int(iyr[0]))+'-01-01', '%Y-%m-%d')
-    data_time0 = (data_time0-t0).total_seconds()/86400.0
+    # # Calculate year, month, day for the time values
+    # iyr = t0.year + np.floor(local_data_time/365.0)
+    # data_time0 = datetime.strptime(str(int(iyr[0]))+'-01-01', '%Y-%m-%d')
+    # data_time0 = (data_time0-t0).total_seconds()/86400.0
     
-    iday = local_data_time - data_time0
-    imm = np.zeros_like(iday)
-    mdoy = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
+    # iday = local_data_time - data_time0
+    # imm = np.zeros_like(iday)
+    # mdoy = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
     
-    for m in range(1, 13):
-        tpts = np.where((iday > mdoy[m-1]) & (iday <= mdoy[m]))
-        if (len(tpts[0]) > 0):
-            imm[tpts] = m
-            iday[tpts] = iday[tpts] - mdoy[m-1]
+    # for m in range(1, 13):
+    #     tpts = np.where((iday > mdoy[m-1]) & (iday <= mdoy[m]))
+    #     if (len(tpts[0]) > 0):
+    #         imm[tpts] = m
+    #         iday[tpts] = iday[tpts] - mdoy[m-1]
     
-    local_data_time = iday
+    # local_data_time = iday
     
-    # Update time units
-    tunit = tunit.replace(str(t0.year).zfill(4)+'-', str(int(iyr[0])).zfill(4)+'-')
-    tunit = tunit.replace('-'+str(t0.month).zfill(2)+'-', '-'+str(int(imm[0])).zfill(2)+'-')
-    if(tunit.endswith(' 00') and not tunit.endswith(' 00:00:00')):
-        tunit = tunit + ':00:00'
+    # # Update time units
+    # tunit = tunit.replace(str(t0.year).zfill(4)+'-', str(int(iyr[0])).zfill(4)+'-')
+    # tunit = tunit.replace('-'+str(t0.month).zfill(2)+'-', '-'+str(int(imm[0])).zfill(2)+'-')
+    # if(tunit.endswith(' 00') and not tunit.endswith(' 00:00:00')):
+    #     tunit = tunit + ':00:00'
     
     
-    # Create land mask from first time slice
-    mask = local_data[0].copy()
-    mask = np.where(~np.isnan(mask), 1, np.nan)
+    # # Create land mask from first time slice
+    # mask = local_data[0].copy()
+    # mask = np.where(~np.isnan(mask), 1, np.nan)
     
-    # Create gridIDs
-    total_gridcells = total_rows * total_cols
-    grid_ids = np.linspace(0, total_gridcells-1, total_gridcells, dtype=int)
-    grid_ids = grid_ids.reshape(total_cols, total_rows)
+    # # Create gridIDs
+    # total_gridcells = total_rows * total_cols
+    # grid_ids = np.linspace(0, total_gridcells-1, total_gridcells, dtype=int)
+    # grid_ids = grid_ids.reshape(total_cols, total_rows)
         
-    # create an flattened list of land gridID and reduce the size of gridIDs array
-    grid_ids = np.multiply(mask, grid_ids)
-    grid_ids = grid_ids[~np.isnan(grid_ids)]
+    # # create an flattened list of land gridID and reduce the size of gridIDs array
+    # grid_ids = np.multiply(mask, grid_ids)
+    # grid_ids = grid_ids[~np.isnan(grid_ids)]
         
-    # extract the data over land gridcells
-    number_landcells = len(grid_ids)    
-    local_data = np.multiply(mask, local_data)
-    local_data = local_data[~np.isnan(local_data)]
-    local_data = np.reshape(local_data,(local_count_time,number_landcells))
+    # # extract the data over land gridcells
+    # number_landcells = len(grid_ids)    
+    # local_data = np.multiply(mask, local_data)
+    # local_data = local_data[~np.isnan(local_data)]
+    # local_data = np.reshape(local_data,(local_count_time,number_landcells))
 
-    latxy = np.multiply(mask, latxy)
-    latxy = latxy[~np.isnan(latxy)]
-    lonxy = np.multiply(mask, lonxy)
-    lonxy = lonxy[~np.isnan(lonxy)]
+    # latxy = np.multiply(mask, latxy)
+    # latxy = latxy[~np.isnan(latxy)]
+    # lonxy = np.multiply(mask, lonxy)
+    # lonxy = lonxy[~np.isnan(lonxy)]
 
-    # convert local grid_id_lists into an array
-    grid_id_arr = np.array(grid_ids)
-    local_data_arr = np.array(local_data)
-    lonxy_arr = np.array(lonxy)
-    latxy_arr = np.array(latxy)
+    # # convert local grid_id_lists into an array
+    # grid_id_arr = np.array(grid_ids)
+    # local_data_arr = np.array(local_data)
+    # lonxy_arr = np.array(lonxy)
+    # latxy_arr = np.array(latxy)
 
-    # Create output filename
-    dst_name = os.path.join(output_path, f'clmforc.Daymet4.1km.p1d.{var_name}.{period}.1step1process.nc')
+    # # Create output filename
+    # dst_name = os.path.join(output_path, f'clmforc.Daymet4.1km.p1d.{var_name}.{period}.1step1process.nc')
     
-    # Create the output file with PNetCDF
-    dst = pnc.File(filename=dst_name, mode='w', format='NC_64BIT_DATA', comm=comm)
+    # # Create the output file with PNetCDF
+    # dst = pnc.File(filename=dst_name, mode='w', format='NC_64BIT_DATA', comm=comm)
     
-    # Add file title attribute
-    dst.put_att('title', var_name + '('+period+') created from '+ input_path +' on ' + formatted_date)
+    # # Add file title attribute
+    # dst.put_att('title', var_name + '('+period+') created from '+ input_path +' on ' + formatted_date)
     
-    # Define dimensions
-    dst.def_dim('time', time_steps)
-    dst.def_dim('ni', number_landcells)
-    dst.def_dim('nj', 1)
+    # # Define dimensions
+    # dst.def_dim('time', time_steps)
+    # dst.def_dim('ni', number_landcells)
+    # dst.def_dim('nj', 1)
     
-    # Define variables using PNetCDF API
-    var_id = dst.def_var('gridID', pnc.NC_INT, ['nj', 'ni'])
-    var_time = dst.def_var('time', pnc.NC_DOUBLE, ['time'])
-    var_lat = dst.def_var('LATIXY', pnc.NC_DOUBLE, ['nj', 'ni'])
-    var_lon = dst.def_var('LONGXY', pnc.NC_DOUBLE, ['nj', 'ni'])
-    var_main = dst.def_var(var_name, pnc.NC_FLOAT, ['time', 'nj', 'ni'])
+    # # Define variables using PNetCDF API
+    # var_id = dst.def_var('gridID', pnc.NC_INT, ['nj', 'ni'])
+    # var_time = dst.def_var('time', pnc.NC_DOUBLE, ['time'])
+    # var_lat = dst.def_var('LATIXY', pnc.NC_DOUBLE, ['nj', 'ni'])
+    # var_lon = dst.def_var('LONGXY', pnc.NC_DOUBLE, ['nj', 'ni'])
+    # var_main = dst.def_var(var_name, pnc.NC_FLOAT, ['time', 'nj', 'ni'])
     
-    var_id.put_att('long_name', "gridId in the NA domain")
-    var_id.put_att('decription', "Covers all land and ocean gridcells, with #0 at the upper left corner of the domain")
-    # Copy attributes
-    for attr_name in src.variables[var_name].ncattrs():
-        value = src.variables[var_name].get_att(attr_name)
-        var_main.put_att(attr_name, value)
+    # var_id.put_att('long_name', "gridId in the NA domain")
+    # var_id.put_att('decription', "Covers all land and ocean gridcells, with #0 at the upper left corner of the domain")
+    # # Copy attributes
+    # for attr_name in src.variables[var_name].ncattrs():
+    #     value = src.variables[var_name].get_att(attr_name)
+    #     var_main.put_att(attr_name, value)
 
-    for attr_name in src.variables['time'].ncattrs():
-        if attr_name == 'units':
-            var_time.put_att('units', tunit)
-        else:
-            value = src.variables['time'].get_att(attr_name)
-            var_time.put_att(attr_name, value)
+    # for attr_name in src.variables['time'].ncattrs():
+    #     if attr_name == 'units':
+    #         var_time.put_att('units', tunit)
+    #     else:
+    #         value = src.variables['time'].get_att(attr_name)
+    #         var_time.put_att(attr_name, value)
     
-    # Copy lat/lon attributes if they exist
-    if 'lat' in src.variables:
-        for attr_name in src.variables['lat'].ncattrs():
-            value = src.variables['lat'].get_att(attr_name)
-            var_lat.put_att(attr_name, value)
+    # # Copy lat/lon attributes if they exist
+    # if 'lat' in src.variables:
+    #     for attr_name in src.variables['lat'].ncattrs():
+    #         value = src.variables['lat'].get_att(attr_name)
+    #         var_lat.put_att(attr_name, value)
     
-    if 'lon' in src.variables:
-        for attr_name in src.variables['lon'].ncattrs():
-            value = src.variables['lon'].get_att(attr_name)
-            var_lon.put_att(attr_name, value)
+    # if 'lon' in src.variables:
+    #     for attr_name in src.variables['lon'].ncattrs():
+    #         value = src.variables['lon'].get_att(attr_name)
+    #         var_lon.put_att(attr_name, value)
     
-    # End define mode
-    dst.enddef()
+    # # End define mode
+    # dst.enddef()
     
-    # Write main variable data using nonblocking independent I/
-    req_write_list = []
+    # # Write main variable data using nonblocking independent I/
+    # req_write_list = []
 
-    start_var = [local_start_time, 0, 0]
-    count_var = [local_count_time, 1, number_landcells]
-    req_write_list.append(var_main.iput_var(start=start_var, count=count_var, data=local_data_arr.reshape(local_count_time, 1, number_landcells)))
+    # start_var = [local_start_time, 0, 0]
+    # count_var = [local_count_time, 1, number_landcells]
+    # req_write_list.append(var_main.iput_var(start=start_var, count=count_var, data=local_data_arr.reshape(local_count_time, 1, number_landcells)))
     
-    # Write time data
-    start_time = [local_start_time]
-    count_time = [local_count_time]
-    req_write_list.append(var_time.iput_var(start=start_time, count=count_time, data=local_data_time))
+    # # Write time data
+    # start_time = [local_start_time]
+    # count_time = [local_count_time]
+    # req_write_list.append(var_time.iput_var(start=start_time, count=count_time, data=local_data_time))
     
-    # Calculate landcells slice for each process
-    base_lancells_per_process = number_landcells // M
-    landcells_remainder = number_landcells % M
+    # # Calculate landcells slice for each process
+    # base_lancells_per_process = number_landcells // M
+    # landcells_remainder = number_landcells % M
     
-    # Calculate the start and end indices for the current process
+    # # Calculate the start and end indices for the current process
     # if local_rank < landcells_remainder:
     #     local_start_landcells = local_rank * (base_lancells_per_process + 1)
     #     local_count_landcells = base_lancells_per_process + 1
@@ -269,26 +267,24 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
     #     local_start_landcells = local_rank * base_lancells_per_process + landcells_remainder
     #     local_count_landcells = base_lancells_per_process
     
-    local_start_landcells = 0
-    local_count_landcells = 1
-    local_end_landcells = local_start_landcells + local_count_landcells
+    # local_end_landcells = local_start_landcells + local_count_landcells
 
-    # Write lat/lon data
-    req_write_list.append(var_lat.iput_var(start=[0, local_start_landcells], count=[1, local_count_landcells], data=latxy_arr.reshape(1, -1)[:, local_start_landcells:local_end_landcells]))
+    # # Write lat/lon data
+    # req_write_list.append(var_lat.iput_var(start=[0, local_start_landcells], count=[1, local_count_landcells], data=latxy_arr.reshape(1, -1)[:, local_start_landcells:local_end_landcells]))
         
-    req_write_list.append(var_lon.iput_var(start=[0, local_start_landcells], count=[1, local_count_landcells], data=lonxy_arr.reshape(1, -1)[:, local_start_landcells:local_end_landcells]))
+    # req_write_list.append(var_lon.iput_var(start=[0, local_start_landcells], count=[1, local_count_landcells], data=lonxy_arr.reshape(1, -1)[:, local_start_landcells:local_end_landcells]))
 
-    req_write_list.append(var_id.iput_var(start=[0, local_start_landcells], count=[1, local_count_landcells],  data=grid_id_arr.reshape(1, -1)[:, local_start_landcells:local_end_landcells]))
+    # req_write_list.append(var_id.iput_var(start=[0, local_start_landcells], count=[1, local_count_landcells],  data=grid_id_arr.reshape(1, -1)[:, local_start_landcells:local_end_landcells]))
 
-    # Wait for all write operations to complete
-    dst.wait_all(requests=req_write_list)
+    # # Wait for all write operations to complete
+    # dst.wait_all(requests=req_write_list)
 
     # Close files
     src.close()
-    dst.close()
+    # dst.close()
     
-    # if local_rank == 0:
-    #     print(f"Successfully processed {file}\n")
+    if local_rank == 0:
+        print(f"Successfully processed {file}\n")
 
 def get_files(input_path, ncheader='clmforc'):
     """Get the list of NetCDF files to process."""
@@ -354,7 +350,7 @@ def main():
 
     # if world_rank == 0:
     #     print('Node_world_rank', get_node_rank(world_comm))
-    # print(f'Group {file_group} Local_rank {group_rank}')
+    print(f'Group {file_group} Local_rank {group_rank}')
 
     # Calculate file distribution among groups, handling uneven division
     base_files_per_group = n_files // N  # Integer division

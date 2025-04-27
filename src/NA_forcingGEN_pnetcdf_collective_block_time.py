@@ -340,8 +340,6 @@ def main():
         print("pnetcdf-python is required for this script")
         sys.exit(1)
 
-    if MPI.Is_initialized() == 0:  # Check if MPI is not yet initialized
-        MPI.Init()
     world_comm = MPI.COMM_WORLD
     world_size = world_comm.Get_size()
     world_rank = world_comm.Get_rank()

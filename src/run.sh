@@ -37,7 +37,7 @@ PYTHON_PATH="$(which python)"
 # === Build mpiexec command ===
 if [ "$MULTI_NODE" -eq 1 ]; then
     # Multi-node mode: must use absolute python path to ensure correct env
-    MPI_CMD="mpiexec -f $HOSTFILE_PATH -n $TOTAL_PROCS $PYTHON_PATH $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    MPI_CMD="mpiexec --display-map -f $HOSTFILE_PATH -n $TOTAL_PROCS $PYTHON_PATH $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 else
     # Single-node mode
     MPI_CMD="mpiexec -n $TOTAL_PROCS $PYTHON_PATH $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"

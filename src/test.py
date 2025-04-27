@@ -54,7 +54,7 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
     source_file = os.path.join(input_path, file)
 
     # Open with PNetCDF
-    # src = pnc.File(filename=source_file, mode='r', comm=comm)
+    src = pnc.File(filename=source_file, mode='r', comm=comm)
  
     # if local_rank == 0:
     #     print(f"Successfully opened file: {source_file}\n")

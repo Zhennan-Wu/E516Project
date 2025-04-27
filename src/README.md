@@ -13,3 +13,5 @@
 - N: Files will be processed in parallel (each with M processes, for a total of M*N processes)
   
 - T: timesteps to be processed or -1 (all time series)
+
+- hostfile.txt specify the number of cpus each node provides, might need to be modified in experiments

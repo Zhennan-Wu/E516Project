@@ -32,7 +32,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 # === Build mpiexec command ===
 if [ "$MULTI_NODE" -eq 1 ]; then
     # Multi-node mode: Activate conda environment for each process
-    MPI_CMD="mpiexec --mca btl_base_verbose 100 --display-map --hostfile $HOSTFILE_PATH -n $TOTAL_PROCS env \"PATH=/home/exouser/miniforge3/envs/$CONDA_ENV/bin:$PATH\" conda run -n $CONDA_ENV python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    MPI_CMD="mpiexec --mca btl_base_verbose 100 --display-map --mca btl_tcp_if_exclude lo,docker0,br-* --hostfile $HOSTFILE_PATH -n $TOTAL_PROCS env \"PATH=/home/exouser/miniforge3/envs/$CONDA_ENV/bin:$PATH\" conda run -n $CONDA_ENV python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 else
     # Single-node mode: Activate conda environment for all processes
     MPI_CMD="mpiexec -n $TOTAL_PROCS conda run -n $CONDA_ENV python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"

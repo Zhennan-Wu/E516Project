@@ -384,7 +384,7 @@ def main():
         start_time = process_time()
         
         # Process the file with the file_comm
-        # forcing_save_1dNA(input_path, os.path.basename(f), var_name, period, time_steps, output_path, file_comm, M, formatted_date)
+        forcing_save_1dNA(input_path, os.path.basename(f), var_name, period, time_steps, output_path, file_comm, M, formatted_date)
         
         end_time = process_time()
         

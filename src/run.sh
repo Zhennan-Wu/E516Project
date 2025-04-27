@@ -33,7 +33,7 @@ conda activate "$CONDA_ENV"
 # === Build mpiexec command ===
 if [ "$MULTI_NODE" -eq 1 ]; then
     # Multi-node mode
-    MPI_CMD="mpiexec -f $HOSTFILE_PATH -n $TOTAL_PROCS env PATH="/home/exouser/miniforge3/envs/$CONDA_ENV/bin:$PATH" /home/exouser/miniforge3/envs/$CONDA_ENV/bin/python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    MPI_CMD="mpiexec -f $HOSTFILE_PATH -n $TOTAL_PROCS /home/exouser/miniforge3/envs/$CONDA_ENV/bin/python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 else
     # Single-node mode
     MPI_CMD="mpiexec -n $TOTAL_PROCS python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"

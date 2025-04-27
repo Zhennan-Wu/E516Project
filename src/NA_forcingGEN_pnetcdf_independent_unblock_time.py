@@ -15,7 +15,6 @@ from pyproj import CRS
 try:
     from mpi4py import MPI
     HAS_MPI4PY = True
-    world_comm = MPI.COMM_WORLD
 except ImportError:
     HAS_MPI4PY = False
     print("mpi4py is required for this script")
@@ -348,7 +347,9 @@ def main():
     if not HAS_PNETCDF:
         print("pnetcdf-python is required for this script")
         sys.exit(1)
-    
+
+    # Ensure MPI is initialized first
+    MPI.Init()
     world_comm = MPI.COMM_WORLD
     world_size = world_comm.Get_size()
     world_rank = world_comm.Get_rank()

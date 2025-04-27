@@ -339,7 +339,9 @@ def main():
     if not HAS_PNETCDF:
         print("pnetcdf-python is required for this script")
         sys.exit(1)
-    
+
+    # Ensure MPI is initialized first
+    MPI.Init()
     world_comm = MPI.COMM_WORLD
     world_size = world_comm.Get_size()
     world_rank = world_comm.Get_rank()

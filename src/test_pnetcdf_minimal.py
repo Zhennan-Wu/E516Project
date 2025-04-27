@@ -1,5 +1,5 @@
 from mpi4py import MPI
-import pnetcdf4 as pnc
+import pnetcdf as pnc
 import numpy as np
 import os
 

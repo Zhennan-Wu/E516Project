@@ -1,50 +1,49 @@
 from mpi4py import MPI
-import pnetcdf as pnc
-import numpy as np
-import os
+import pnetcdf
 
-MPI.Init()
-# Get the global MPI communicator
+# Get MPI communicator, rank, size
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-# Define file name
-output_file = "test_parallel_pnetcdf.nc"
+# Check basic info
+if rank == 0:
+    print(f"Running with {size} MPI processes")
 
-# Each process prepares its own little data
-local_data = np.full((10,), rank, dtype=np.float32)  # Each rank has 10 elements set to its rank ID
+# Create a new NetCDF file (parallel)
+filename = "testfile.nc"
+cmode = pnetcdf.NC_CLOBBER  # overwrite if exists
 
-# Create the output NetCDF file
-if os.path.exists(output_file) and rank == 0:
-    os.remove(output_file)  # Clean old file (only rank 0)
+# Open file collectively
+ncfile = pnetcdf.File.create(filename, cmode=cmode, comm=comm)
 
-comm.Barrier()  # Synchronize before creating file
+# Define a dimension
+dim_name = "x"
+dim_size = 4  # total size (choose whatever you like)
+ncfile.def_dim(dim_name, dim_size)
 
-# Open file in write mode with PNetCDF
-ncfile = pnc.File(filename=output_file, mode='w', format='NC_64BIT_DATA', comm=comm)
-
-# Define dimensions (global size = size * 10)
-ncfile.def_dim('x', size * 10)
-
-# Define a single variable
-var_x = ncfile.def_var('var', pnc.NC_FLOAT, ['x'])
+# Define a variable
+var_name = "var"
+var_id = ncfile.def_var(var_name, pnetcdf.NC_INT, (dim_name,))
 
 # End define mode
 ncfile.enddef()
 
-# Each rank writes its part
-start = [rank * 10]
-count = [10]
+# Each rank writes one value
+local_value = rank * 10  # or any number you want
 
-req = var_x.iput_var(start=start, count=count, data=local_data)
+# Define the write offset
+start = [rank]
+count = [1]
 
-# Wait for all non-blocking write operations to complete
-req.wait()
+# Do non-blocking put
+req = ncfile.iput_vara(var_id, start, count, [local_value])
 
-# Close the file
+# Wait for completion
+ncfile.wait_all([req])
+
+# Close file
 ncfile.close()
 
 if rank == 0:
-    print("✅ Successfully created test_parallel_pnetcdf.nc with", size, "processes.")
-MPI.Finalize()
+    print(f"Finished writing {filename}")

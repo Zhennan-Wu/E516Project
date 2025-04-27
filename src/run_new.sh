@@ -2,10 +2,10 @@
 
 # === CONFIG ===
 CONDA_ENV="elm_openmpi"
+SCRIPT_PATH="/home/exouser/shared_data/final_project/src/"
+HOSTFILE_PATH="/home/exouser/shared_data/final_project/src/hostfile.txt"
 INPUT_PATH="/home/exouser/shared_data/final_project/dataset"
 OUTPUT_PATH="/home/exouser/shared_data/final_project/output"
-HOSTFILE_PATH="/home/exouser/shared_data/final_project/src/hostfile.txt"   # <-- Default hostfile for multi-node run
-SCRIPT_PATH="/home/exouser/shared_data/final_project/src/"
 # ==============
 
 # Help message
@@ -28,15 +28,14 @@ TOTAL_PROCS=$((M * N))
 
 # === Conda setup ===
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate "$CONDA_ENV"
 
 # === Build mpiexec command ===
 if [ "$MULTI_NODE" -eq 1 ]; then
-    # Multi-node mode
-    MPI_CMD="mpiexec --hostfile $HOSTFILE_PATH -n $TOTAL_PROCS env "PATH=/home/exouser/miniforge3/envs/elm_openmpi/bin:$PATH" python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    # Multi-node mode: activate the conda environment for each process
+    MPI_CMD="mpiexec --hostfile $HOSTFILE_PATH -n $TOTAL_PROCS env \"PATH=/home/exouser/miniforge3/envs/$CONDA_ENV/bin:$PATH\" bash -c \"source $(conda info --base)/etc/profile.d/conda.sh && conda activate $CONDA_ENV && python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N\""
 else
-    # Single-node mode
-    MPI_CMD="mpiexec -n $TOTAL_PROCS python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    # Single-node mode: activate conda environment for all processes
+    MPI_CMD="mpiexec -n $TOTAL_PROCS bash -c \"source $(conda info --base)/etc/profile.d/conda.sh && conda activate $CONDA_ENV && python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N\""
 fi
 
 # === Run ===
@@ -44,3 +43,4 @@ echo "Running '$SCRIPT' using $TOTAL_PROCS MPI processes in conda env '$CONDA_EN
 echo "Command: $MPI_CMD"
 
 eval "$MPI_CMD"
+

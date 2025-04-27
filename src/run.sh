@@ -4,7 +4,7 @@
 CONDA_ENV="elm"
 INPUT_PATH="/home/exouser/shared_data/final_project/dataset"
 OUTPUT_PATH="/home/exouser/shared_data/final_project/output"
-HOSTFILE_PATH="/home/exouser/shared_data/final_project/src/hostfile.txt"   # <-- Default hostfile for multi-node run
+HOSTFILE_PATH="/home/exouser/shared_data/final_project/src/hostfile.txt"
 SCRIPT_PATH="/home/exouser/shared_data/final_project/src/"
 # ==============
 
@@ -19,6 +19,7 @@ if [ "$#" -ne 5 ] || [ "$1" == "--help" ]; then
     exit 1
 fi
 
+# === Parse arguments ===
 SCRIPT="$SCRIPT_PATH$1"
 M=$2
 N=$3
@@ -30,17 +31,22 @@ TOTAL_PROCS=$((M * N))
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate "$CONDA_ENV"
 
+# === Find Python executable ===
+PYTHON_PATH="$(which python)"
+
 # === Build mpiexec command ===
 if [ "$MULTI_NODE" -eq 1 ]; then
-    # Multi-node mode
-    MPI_CMD="mpiexec -f $HOSTFILE_PATH -n $TOTAL_PROCS /home/exouser/miniforge3/envs/$CONDA_ENV/bin/python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    # Multi-node mode: must use absolute python path to ensure correct env
+    MPI_CMD="mpiexec -f $HOSTFILE_PATH -n $TOTAL_PROCS $PYTHON_PATH $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 else
     # Single-node mode
-    MPI_CMD="mpiexec -n $TOTAL_PROCS python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    MPI_CMD="mpiexec -n $TOTAL_PROCS $PYTHON_PATH $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 fi
 
 # === Run ===
-echo "Running '$SCRIPT' using $TOTAL_PROCS MPI processes in conda env '$CONDA_ENV'"
+echo "Running '$SCRIPT' using $TOTAL_PROCS MPI processes"
+echo "Conda env: '$CONDA_ENV'"
+echo "Python: '$PYTHON_PATH'"
 echo "Command: $MPI_CMD"
 
 eval "$MPI_CMD"

@@ -3,7 +3,7 @@
 # === CONFIG ===
 CONDA_ENV="elm_openmpi"
 SCRIPT_PATH="/home/exouser/shared_data/final_project/src/"
-HOSTFILE_PATH="/home/exouser/shared_data/final_project/src/hostfile.txt"
+HOSTFILE_PATH="/home/exouser/shared_data/final_project/src/hostfile_openmpi.txt"
 INPUT_PATH="/home/exouser/shared_data/final_project/dataset"
 OUTPUT_PATH="/home/exouser/shared_data/final_project/output"
 # ==============

@@ -1,4 +1,5 @@
 ## Code Instruction
+- Log in on to both master node and worker node, both activate conda environment "elm".
 ### Single node
 ```
 ./run.sh NA_forcingGEN_pnetcdf_collective_block_time.py M N T 0

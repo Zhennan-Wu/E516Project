@@ -68,6 +68,9 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
         comm: MPI communicator for this file's M processes
         M: Number of processes for this file
     """
+    # === Start read timing ===
+    start_read_time = process_time()
+
     local_rank = comm.Get_rank()  # Rank within the sub-communicator for this file
     
     # Open the source file (all processes)
@@ -156,6 +159,9 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
     # Get time unit attribute
     tunit = src.variables['time'].get_att('units')
     
+    # === End read timing ===
+    end_read_time = process_time()
+
     # Process the time units
     t0 = str(tunit.lower()).strip('days since')
     t0 = datetime.strptime(t0, '%Y-%m-%d %X')
@@ -216,6 +222,9 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
 
     # Create output filename
     dst_name = os.path.join(output_path, f'clmforc.Daymet4.1km.p1d.{var_name}.{period}.1step1process.nc')
+    
+    # === Start write timing ===
+    start_write_time = process_time()
     
     # Create the output file with PNetCDF
     dst = pnc.File(filename=dst_name, mode='w', format='NC_64BIT_DATA', comm=comm)
@@ -303,9 +312,15 @@ def forcing_save_1dNA(input_path, file, var_name, period, time_steps, output_pat
     src.close()
     dst.close()
     
-    if local_rank == 0:
-        print(f"Successfully processed {file}\n")
+    # === End write timing ===
+    end_write_time = process_time()
 
+    if local_rank == 0:
+        read_elapsed = end_read_time - start_read_time
+        write_elapsed = end_write_time - start_write_time
+        print(f"Successfully processed {file}\n")
+        print(f"File {file}: Read time = {read_elapsed:.2f}s, Write time = {write_elapsed:.2f}s")
+        
 def get_files(input_path, ncheader='clmforc'):
     """Get the list of NetCDF files to process."""
     print(input_path + ncheader)
@@ -347,7 +362,7 @@ def main():
     if not HAS_PNETCDF:
         print("pnetcdf-python is required for this script")
         sys.exit(1)
-    
+
     world_comm = MPI.COMM_WORLD
     world_size = world_comm.Get_size()
     world_rank = world_comm.Get_rank()

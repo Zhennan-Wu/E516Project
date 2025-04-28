@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # === CONFIG ===
-CONDA_ENV="elm"
+CONDA_ENV="elm_openmpi"
+SCRIPT_PATH="/home/exouser/shared_data/final_project/src/"
+HOSTFILE_PATH="/home/exouser/shared_data/final_project/src/hostfile_openmpi.txt"
 INPUT_PATH="/home/exouser/shared_data/final_project/dataset"
 OUTPUT_PATH="/home/exouser/shared_data/final_project/output"
-HOSTFILE_PATH="/home/exouser/shared_data/final_project/src/hostfile.txt"
-SCRIPT_PATH="/home/exouser/shared_data/final_project/src/"
 # ==============
 
 # Help message
@@ -19,7 +19,6 @@ if [ "$#" -ne 5 ] || [ "$1" == "--help" ]; then
     exit 1
 fi
 
-# === Parse arguments ===
 SCRIPT="$SCRIPT_PATH$1"
 M=$2
 N=$3
@@ -29,24 +28,20 @@ TOTAL_PROCS=$((M * N))
 
 # === Conda setup ===
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate "$CONDA_ENV"
-
-# === Find Python executable ===
-PYTHON_PATH="$(which python)"
 
 # === Build mpiexec command ===
 if [ "$MULTI_NODE" -eq 1 ]; then
-    # Multi-node mode: must use absolute python path to ensure correct env
-    MPI_CMD="mpiexec -f $HOSTFILE_PATH -n $TOTAL_PROCS $PYTHON_PATH $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    # Multi-node mode: Activate conda environment for each process
+    MPI_CMD="mpiexec --display-map --hostfile $HOSTFILE_PATH -n $TOTAL_PROCS env \"PATH=/home/exouser/miniforge3/envs/$CONDA_ENV/bin:$PATH\" conda run -n $CONDA_ENV python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 else
-    # Single-node mode
-    MPI_CMD="mpiexec -n $TOTAL_PROCS $PYTHON_PATH $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
+    # Single-node mode: Activate conda environment for all processes
+    MPI_CMD="mpiexec -n $TOTAL_PROCS conda run -n $CONDA_ENV python $SCRIPT $INPUT_PATH $OUTPUT_PATH $TIMESTEPS $M $N"
 fi
 
+
 # === Run ===
-echo "Running '$SCRIPT' using $TOTAL_PROCS MPI processes"
-echo "Conda env: '$CONDA_ENV'"
-echo "Python: '$PYTHON_PATH'"
+echo "Running '$SCRIPT' using $TOTAL_PROCS MPI processes in conda env '$CONDA_ENV'"
 echo "Command: $MPI_CMD"
 
 eval "$MPI_CMD"
+
